@@ -1,0 +1,7 @@
+playwright
+playwright-stealth
+requests
+pillow
+numpy
+scipy
+python-dotenv
