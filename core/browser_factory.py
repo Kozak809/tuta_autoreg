@@ -1,3 +1,9 @@
+"""
+Configures and initializes Playwright browser contexts.
+
+Generates random hardware profiles (GPU, RAM, Cores), applies stealth scripts
+to bypass bot detection, and sets up the browser with appropriate arguments.
+"""
 import random
 import re
 from playwright.sync_api import sync_playwright

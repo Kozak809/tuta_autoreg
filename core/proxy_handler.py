@@ -1,3 +1,9 @@
+"""
+Manages Sing-box proxy tunnels and connection links.
+
+Parses complex proxy URIs (VLESS, VMess, Trojan, Shadowsocks), configures a
+temporary sing-box environment to handle the tunnel, and provides random proxies.
+"""
 import os
 import json
 import time

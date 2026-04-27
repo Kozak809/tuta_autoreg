@@ -1,3 +1,9 @@
+"""
+Script to scrape and update the list of available proxies.
+
+Fetches free proxy server configurations (VLESS, Trojan, SS, VMess) from
+public sources (e.g., v2nodes.com) and saves them for use by the proxy handler.
+"""
 import os
 import re
 import random

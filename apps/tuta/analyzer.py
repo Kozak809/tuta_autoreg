@@ -1,3 +1,10 @@
+"""
+Account statistics analyzer for Tuta.
+
+This script analyzes the success and failure rates of Tuta accounts based on
+their hardware fingerprints, operating systems, and proxy countries. It reads
+the account database and configuration files to provide survival statistics.
+"""
 import json
 import os
 import re

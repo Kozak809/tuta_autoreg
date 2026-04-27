@@ -1,3 +1,10 @@
+"""
+Automated email receiver and monitor for Tuta accounts.
+
+This script logs into a specific Tuta account and continuously monitors the inbox
+and spam folders for new messages. It extracts and displays the text of incoming
+emails and can be configured to search for specific verification codes.
+"""
 import os
 import sys
 # Добавляем корень проекта в sys.path

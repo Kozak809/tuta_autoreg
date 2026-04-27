@@ -1,3 +1,9 @@
+"""
+Integrates with external APIs to solve image-based captchas.
+
+Specifically configured to process images, adjust contrast, and send them
+to the OpenAI API (GPT vision models) to resolve visual challenges like clocks.
+"""
 import os
 import base64
 import requests

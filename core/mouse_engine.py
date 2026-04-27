@@ -1,3 +1,9 @@
+"""
+Simulates human-like mouse movements and scrolling.
+
+Uses Bezier curves and coherent noise to create realistic cursor trajectories
+and scrolling behaviors, helping to bypass basic bot detection systems.
+"""
 import time
 import random
 import numpy as np

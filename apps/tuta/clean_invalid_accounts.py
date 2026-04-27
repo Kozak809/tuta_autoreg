@@ -1,3 +1,10 @@
+"""
+Script to clean up invalid accounts from the database.
+
+This module reads the account data file, identifies accounts marked as 'INVALID'
+(e.g., banned or inaccessible), and removes them from the database along with
+their corresponding configuration files to maintain a clean account pool.
+"""
 import json
 import os
 

@@ -1,3 +1,9 @@
+"""
+General utility functions for the automation framework.
+
+Includes functions for loading account data, generating human-like delays,
+fetching proxy location metadata, and checking basic proxy connectivity.
+"""
 import os
 import json
 import time

@@ -1,3 +1,9 @@
+"""
+Manages session logging and browser tracing.
+
+Records console messages, network requests, and optionally saves Playwright
+traces to help with debugging automation sessions.
+"""
 import os
 import shutil
 

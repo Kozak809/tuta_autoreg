@@ -1,3 +1,10 @@
+"""
+Utility functions for Tuta automation scripts.
+
+This module provides shared helper functions for the Tuta automation package,
+including configuration path resolution, virtual display (Xvfb) management,
+common login routines, and error/block detection logic.
+"""
 import os
 import time
 import json

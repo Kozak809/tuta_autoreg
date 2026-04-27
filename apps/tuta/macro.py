@@ -1,3 +1,10 @@
+"""
+Automation macro for Tuta account registration.
+
+This module handles the core logic of registering a new Tuta email account. It
+navigates the signup process, generates random credentials, solves captchas,
+handles recovery codes, and saves the successful account configurations.
+"""
 import time, random, string, requests, os, shutil, re, json
 import numpy as np
 from scipy.special import comb

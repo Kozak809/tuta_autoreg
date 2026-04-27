@@ -1,3 +1,10 @@
+"""
+Automated account registration script for TikTok.
+
+Navigates the TikTok signup process, interacts with the UI, requests email
+verification, and automatically retrieves the verification code from the
+Tuta email receiver to complete registration.
+"""
 import os, sys, time, random, json, re, subprocess
 # Добавляем корень проекта в sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))

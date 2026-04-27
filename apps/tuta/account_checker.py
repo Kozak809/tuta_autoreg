@@ -1,3 +1,10 @@
+"""
+Parallel account status checker for Tuta.
+
+This script uses multiple worker threads and Playwright instances to log into
+Tuta accounts and verify their validity. It checks for IP blocks, bans, and
+connection issues, updating the account database with the latest status.
+"""
 import os
 import sys
 # Добавляем корень проекта в sys.path

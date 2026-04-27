@@ -1,7 +1,6 @@
 .env
 /temp
-/__pycache__
 /log
-/modules/__pycache__
 /apps/tuta/temp
 /logs/
+__pycache__/

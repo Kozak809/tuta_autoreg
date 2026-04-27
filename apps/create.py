@@ -1,3 +1,10 @@
+"""
+Interactive CLI tool to record browser actions and generate automation scripts.
+
+This script launches a browser instance with a specialized injection script that
+records user clicks and inputs. Once the session is closed, it automatically
+generates a new Python automation script (e.g., main.py) in a new app directory.
+"""
 import os
 import sys
 import json

@@ -1,3 +1,10 @@
+"""
+Continuous multi-threaded account registrar for Tuta.
+
+This script orchestrates the mass registration of Tuta accounts by managing a
+pool of worker threads, maintaining a continuous supply of proxies, and running
+the registration macro until a specified target number of accounts is reached.
+"""
 import os, time, sys, json, asyncio, psutil
 # Добавляем корень проекта в sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))

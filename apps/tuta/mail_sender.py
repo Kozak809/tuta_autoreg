@@ -1,3 +1,10 @@
+"""
+Automated email sender for Tuta accounts.
+
+This script utilizes Playwright and stealth techniques to log into Tuta accounts
+and send emails. It supports using proxies, human-like typing delays, and can
+process multiple accounts in sequence based on command-line arguments.
+"""
 import argparse
 import sys
 import time

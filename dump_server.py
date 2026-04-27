@@ -1,3 +1,11 @@
+"""
+Local HTTP server for browser fingerprint gathering.
+
+This script launches a simple web server that serves an HTML page designed to
+collect various client-side browser fingerprints (e.g., User-Agent, Client Hints,
+WebGL renderer info, Canvas noise). The collected data is sent back to the server
+via a POST request and logged to the console.
+"""
 import http.server
 import socketserver
 import json

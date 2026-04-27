@@ -1,3 +1,11 @@
+"""
+Installation and environment setup script.
+
+This script handles the initialization of the project by setting up a Python
+virtual environment, installing required dependencies (including Playwright
+browsers), checking for necessary system tools like 'sing-box', and creating
+an initial configuration file from a template.
+"""
 import os
 import sys
 import subprocess
