@@ -9,7 +9,6 @@ import time, random, string, requests, os, shutil, re, json
 import numpy as np
 from scipy.special import comb
 from playwright.sync_api import sync_playwright
-from playwright_stealth import Stealth
 from faker import Faker
 from core import captcha_solver as capcha_solver
 from core import proxy_handler as proxy
@@ -19,7 +18,7 @@ from core.utils import human_delay, get_proxy_info, check_proxy_connectivity
 
 fake = Faker('en_US') # Только латиница
 
-def gen_str(min_len=14, max_len=24, include_digits=False, must_include=""):
+def gen_str(max_len=24, must_include=""):
     # Генерируем основу из имени и фамилии
     base = fake.first_name().lower() + (fake.last_name().lower() if random.random() > 0.3 else str(random.randint(100, 9999)))
     base = re.sub(r'[^a-z0-9]', '', base)
@@ -163,7 +162,7 @@ def run(link, port, save_callback, show_cursor=False, debug_mode=False, headless
                 page.screenshot(path=f"temp/fail_tariff_general_{port}.png")
                 return True
 
-            username = gen_str(14, 24, include_digits=False)
+            username = gen_str(max_len=24)
             password = gen_password(16)
             
             def human_type(locator, text):

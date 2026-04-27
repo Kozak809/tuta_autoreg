@@ -22,7 +22,6 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from filelock import FileLock
 from playwright.sync_api import sync_playwright
-from playwright_stealth import Stealth
 from core.proxy_handler import ProxyManager
 from core.mouse_engine import HumanCursor
 from core import proxy_handler as proxy_fetcher
@@ -157,7 +156,7 @@ def worker_thread(worker_id, show_cursor, headless):
         email = account['email']
         
         # 1. Загружаем конфиг, чтобы вытащить оттуда родной прокси
-        saved_config, _ = get_account_config(account)
+        saved_config, _ = resolve_config_path(account.get("config_path"))
         
         success = False
         attempts = 0

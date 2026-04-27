@@ -19,7 +19,6 @@ import subprocess
 import json
 import numpy as np
 from playwright.sync_api import sync_playwright
-from playwright_stealth import Stealth
 from core.proxy_handler import ProxyManager
 from core.mouse_engine import HumanCursor
 from core import browser_factory as playwright_config

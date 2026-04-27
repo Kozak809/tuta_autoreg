@@ -19,7 +19,6 @@ import re
 import argparse
 import subprocess
 from playwright.sync_api import sync_playwright
-from playwright_stealth import Stealth
 from core.proxy_handler import ProxyManager
 from core.mouse_engine import HumanCursor
 from core import proxy_handler as proxy_fetcher

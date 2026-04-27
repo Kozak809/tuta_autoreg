@@ -20,26 +20,15 @@ from core import proxy_handler as proxy_fetcher
 from apps.tuta.tuta_utils import start_xvfb
 
 # --- НАСТРОЙКИ КОНВЕЙЕРА И ПАРСИНГ АРГУМЕНТОВ ---
-TARGET_ACCOUNTS = 77      # Сколько всего нужно сделать (по умолчанию)
-MAX_WORKERS = 15          # Сколько БРАУЗЕРОВ запустить ОДНОВРЕМЕННО
 ACCOUNTS_FILE = "data/accounts.json"
 LOCK_FILE = "data/accounts.lock"
 
-ONLY_SUCCESS_LOGS = "--nologs" in sys.argv
-SHOW_CURSOR = "--show" in sys.argv
-HEADLESS = "--headless" in sys.argv
-USE_XVFB = "--xvfb" in sys.argv
-
-if USE_XVFB:
-    HEADLESS = False  # При Xvfb браузер работает в полноценном оконном режиме
-
-# Парсим количество аккаунтов из аргументов
-_args = [a for a in sys.argv[1:] if a not in ["--show", "--headless", "--nologs", "--xvfb"]]
-if _args:
-    try:
-        TARGET_ACCOUNTS = int(_args[0])
-    except ValueError:
-        pass
+TARGET_ACCOUNTS = 3
+MAX_WORKERS = 15
+ONLY_SUCCESS_LOGS = False
+SHOW_CURSOR = False
+HEADLESS = False
+USE_XVFB = False
 
 # --- ФИЛЬТРАЦИЯ ЛОГОВ ---
 def custom_print(*args, **kwargs):
@@ -54,10 +43,6 @@ def custom_print(*args, **kwargs):
             builtins._original_print(*args, **kwargs)
     else:
         builtins._original_print(*args, **kwargs)
-
-if not hasattr(builtins, "_original_print"):
-    builtins._original_print = builtins.print
-    builtins.print = custom_print
 
 # Общая очередь для прокси
 PROXY_QUEUE = queue.Queue()
@@ -150,6 +135,49 @@ async def main():
 
     try:
         while True:
+            current_count = get_success_count()
+            if current_count - initial_count >= TARGET_ACCOUNTS:
+                print(f"[*] Цель достигнута. Принудительно завершаем работу всех потоков...")
+                break
+
+            # Если очередь прокси пустеет — подливаем новые
+            if PROXY_QUEUE.qsize() < MAX_WORKERS * 2:
+                print("[*] Очередь прокси пуста, запрашиваю новые...")
+                links = proxy_fetcher.update_proxies_python()
+                if links:
+                    for l in links:
+                        PROXY_QUEUE.put(l)
+                    print(f"[+] Добавлено {len(links)} прокси в очередь.")
+                else:
+                    print("[-] Прокси не получены, ждем 20 сек...")
+            
+            await asyncio.sleep(20)
+    except KeyboardInterrupt:
+        print("[!] Остановка пользователем...")
+    finally:
+        executor.shutdown(wait=False)
+        final_count = get_success_count()
+        print(f"[+++] ВСЕГО СОЗДАНО: {final_count - initial_count}. Остановка дочерних процессов (браузеров)...")
+        try:
+            parent = psutil.Process(os.getpid())
+            children = parent.children(recursive=True)
+            for child in children:
+                try: child.kill()
+                except Exception: pass
+            psutil.wait_procs(children, timeout=3)
+        except Exception:
+            pass
+            
+        if 'xvfb_process' in globals() and xvfb_process:
+            try: xvfb_process.kill()
+            except: pass
+            
+        print("[+++] Скрипт полностью остановлен.")
+        os._exit(0)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+hile True:
             current_count = get_success_count()
             if current_count - initial_count >= TARGET_ACCOUNTS:
                 print(f"[*] Цель достигнута. Принудительно завершаем работу всех потоков...")

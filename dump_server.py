@@ -9,7 +9,6 @@ via a POST request and logged to the console.
 import http.server
 import socketserver
 import json
-import urllib.parse
 
 PORT = 8080
 

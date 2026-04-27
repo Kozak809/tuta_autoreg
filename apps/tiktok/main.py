@@ -194,7 +194,6 @@ def register_tiktok(account, show_cursor=True, headless=False):
                 proc.start()
                 try:
                     # Ждем максимум 160 секунд (с небольшим запасом от таймаута внутри функции)
-                    import queue as q_lib # На всякий случай для исключения
                     code = queue.get(timeout=160)
                 except Exception:
                     code = None
