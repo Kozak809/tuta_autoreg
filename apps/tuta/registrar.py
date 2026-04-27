@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from filelock import FileLock
 from apps.tuta import macro
 from core import proxy_handler as proxy_fetcher
+from apps.tuta.tuta_utils import start_xvfb
 
 # --- НАСТРОЙКИ КОНВЕЙЕРА И ПАРСИНГ АРГУМЕНТОВ ---
 TARGET_ACCOUNTS = 77      # Сколько всего нужно сделать (по умолчанию)
@@ -129,15 +130,7 @@ async def main():
     xvfb_process = None
     if USE_XVFB:
         import subprocess
-        for display in range(99, 120):
-            if not os.path.exists(f"/tmp/.X11-unix/X{display}"):
-                print(f"[*] Запускаем Xvfb на дисплее :{display}...")
-                xvfb_process = subprocess.Popen(["Xvfb", f":{display}", "-screen", "0", "1920x1080x24", "-ac", "+extension", "RANDR"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                os.environ["DISPLAY"] = f":{display}"
-                time.sleep(2)
-                break
-        else:
-            print("[-] Не удалось найти свободный дисплей для Xvfb.")
+        xvfb_process = start_xvfb(99, 120)
 
     initial_count = get_success_count()
     print(f"[#] КОНВЕЙЕР (НЕПРЕРЫВНЫЙ) ЗАПУЩЕН.")

@@ -32,20 +32,9 @@ def clean_invalid_accounts():
                     
                     # Пытаемся найти и удалить файл конфигурации
                     if cpath:
-                        # cpath обычно выглядит как "data/configs/config_xxx.json"
-                        # base_dir указывает на apps/tuta
-                        full_cpath = os.path.join(base_dir, cpath)
-                        
-                        deleted = False
-                        if os.path.exists(full_cpath):
-                            os.remove(full_cpath)
-                            deleted = True
-                        # На случай, если конфиг лежит относительно корня проекта
-                        elif os.path.exists(cpath):
-                            os.remove(cpath)
-                            deleted = True
-                            
-                        if deleted:
+                        _, real_cpath = resolve_config_path(cpath)
+                        if real_cpath and os.path.exists(real_cpath):
+                            os.remove(real_cpath)
                             removed_configs_count += 1
                 else:
                     valid_accounts.append(line)

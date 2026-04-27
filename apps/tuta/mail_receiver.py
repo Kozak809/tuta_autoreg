@@ -19,45 +19,9 @@ from core import proxy_handler as proxy_fetcher
 from core import browser_factory as playwright_config
 from core.utils import human_delay, load_accounts, get_proxy_info, check_proxy_connectivity
 from apps.tuta.macro import check_block
+from apps.tuta.tuta_utils import resolve_config_path, check_tuta_errors, start_xvfb, login_to_tuta
 
 # Удалено: human_delay перенесен в core.utils
-
-def check_page_status(page):
-    """Проверка на критические ошибки на странице."""
-    try:
-        # Получаем текст всей страницы для поиска ошибок
-        body_text = page.evaluate("() => document.body.innerText")
-        
-        # Проверка на неверный логин
-        invalid_texts = [
-            "Invalid login credentials", 
-            "Неверные данные для входа",
-            "Date de autentificare incorecte"
-        ]
-        if any(msg in body_text for msg in invalid_texts):
-            print("[-] КРИТИЧЕСКАЯ ОШИБКА: Неверные данные для входа. Завершение работы.")
-            sys.exit(1)
-        
-        # Проверка на потерю соединения
-        lost_conn_texts = [
-            "The connection to the server was lost. Please try again.",
-            "Соединение с сервером потеряно. Пожалуйста, попробуйте еще раз."
-        ]
-        for msg in lost_conn_texts:
-            if msg in body_text:
-                print(f"[-] ОШИБКА: {msg}")
-                raise Exception("CONNECTION_LOST")
-
-    except SystemExit:
-        sys.exit(1)
-    except Exception as e:
-        if "CONNECTION_LOST" in str(e):
-            raise e
-        pass
-    return False
-
-# Удалено: check_block перенесен в core.utils
-
 
 def select_account(file_path, email_arg=None):
     accounts = load_accounts(file_path)
@@ -201,63 +165,9 @@ def run_receiver(account, show_cursor=True, headless=False, one_code=False):
                     pm.stop()
                     continue
 
-                # Логин - Улучшенный поиск и ввод
-                print("[*] Поиск полей ввода...")
-                try:
-                    # Ждем появления формы (любого из вариантов)
-                    page.wait_for_selector("input[type='email'], [data-testid='tfi:username']", timeout=60000)
-                except: pass
-
-                # Поиск поля почты
-                u_field = page.locator("input[type='email']").first
-                if not u_field.is_visible():
-                    u_field = page.get_by_test_id("tfi:username").locator("input").first
-                if not u_field.is_visible():
-                    u_field = page.get_by_test_id("tfi:username_label")
-                
-                print(f"[*] Ввод почты...")
-                cursor.click(u_field)
-                human_delay(0.2, 0.5)
-                page.keyboard.type(email, delay=random.randint(50, 120))
-                human_delay(0.5, 0.8)
-                
-                # Поиск поля пароля
-                p_field = page.locator("input[type='password']").first
-                if not p_field.is_visible():
-                    p_field = page.get_by_test_id("tfi:password").locator("input").first
-                if not p_field.is_visible():
-                    p_field = page.get_by_test_id("tfi:password_label")
-                
-                print(f"[*] Ввод пароля...")
-                cursor.click(p_field)
-                human_delay(0.2, 0.5)
-                page.keyboard.type(password, delay=random.randint(50, 120))
-                human_delay(0.6, 1.0)
-                
-                try:
-                    checkbox = page.locator("input.checkbox.list-checkbox.click").first
-                    if checkbox.is_visible():
-                        print("[*] Клик по чекбоксу...")
-                        cursor.click(checkbox)
-                        human_delay(0.4, 0.7)
-                except:
-                    pass
-                
-                # Нажимаем Login
-                login_btn = page.get_by_test_id("btn:login_action")
-                if not login_btn.is_visible():
-                    login_btn = page.locator("button[type='submit']").first
-                if not login_btn.is_visible():
-                    login_btn = page.locator("button").filter(has_text=re.compile("Log in|Войти", re.IGNORECASE)).first
-                
-                print(f"[*] Клик по кнопке входа...")
-                cursor.click(login_btn)
-                
-                # Fallback: если кнопка все еще видна или url не изменился, жмем Enter
-                human_delay(1.5, 2.5)
-                if page.url.endswith("/login") and login_btn.is_visible():
-                    print("[*] Дополнительный ввод Enter для входа...")
-                    page.keyboard.press("Enter")
+                # Логин
+                print("[*] Ввод данных...")
+                login_to_tuta(page, cursor, email, password)
                 
                 print(f"[*] [{email}] Ожидание загрузки почты...")
                 
@@ -381,7 +291,12 @@ def run_receiver(account, show_cursor=True, headless=False, one_code=False):
                     # Постоянная проверка на ошибки во время мониторинга
                     try:
                         if not page.is_closed():
-                            check_page_status(page)
+                            status, is_crit = check_tuta_errors(page)
+                            if is_crit:
+                                print(f"[-] КРИТИЧЕСКАЯ ОШИБКА: {status}. Завершение мониторинга.")
+                                break
+                            if status == "CONNECTION_LOST":
+                                raise Exception("CONNECTION_LOST")
                     except: break
                     
                     # Проверка на вылет из аккаунта (сессия истекла)
@@ -389,43 +304,7 @@ def run_receiver(account, show_cursor=True, headless=False, one_code=False):
                         if page.is_closed(): break
                         if page.url.endswith("/login") or page.locator("button").filter(has_text=re.compile("Log in|Войти", re.IGNORECASE)).is_visible():
                             print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [!] Сессия истекла (появилась кнопка входа). Выполняю повторный вход...")
-                            
-                            u_field = page.locator("input[type='email']").first
-                            if not u_field.is_visible():
-                                u_field = page.get_by_test_id("tfi:username").locator("input").first
-                            if not u_field.is_visible():
-                                u_field = page.get_by_test_id("tfi:username_label")
-                            
-                            if u_field.is_visible():
-                                cursor.click(u_field)
-                                human_delay(0.2, 0.5)
-                                page.keyboard.type(email, delay=random.randint(50, 120))
-                                human_delay(0.5, 0.8)
-                            
-                            p_field = page.locator("input[type='password']").first
-                            if not p_field.is_visible():
-                                p_field = page.get_by_test_id("tfi:password").locator("input").first
-                            if not p_field.is_visible():
-                                p_field = page.get_by_test_id("tfi:password_label")
-                            
-                            if p_field.is_visible():
-                                cursor.click(p_field)
-                                human_delay(0.2, 0.5)
-                                page.keyboard.type(password, delay=random.randint(50, 120))
-                                human_delay(0.7, 1.2)
-                            
-                            login_btn = page.get_by_test_id("btn:login_action")
-                            if not login_btn.is_visible():
-                                login_btn = page.locator("button[type='submit']").first
-                            if not login_btn.is_visible():
-                                login_btn = page.locator("button").filter(has_text=re.compile("Log in|Войти", re.IGNORECASE)).first
-                            
-                            if login_btn.is_visible():
-                                cursor.click(login_btn)
-                                human_delay(1.5, 2.5)
-                                if page.url.endswith("/login") and login_btn.is_visible():
-                                    page.keyboard.press("Enter")
-                            
+                            login_to_tuta(page, cursor, email, password)
                             print(f"[*] Повторный вход отправлен. Ожидание загрузки...")
                             human_delay(5.0, 7.0)
                             continue
@@ -505,15 +384,7 @@ if __name__ == "__main__":
     xvfb_process = None
     if args.xvfb:
         headless = False
-        for display in range(251, 300):
-            if not os.path.exists(f"/tmp/.X11-unix/X{display}"):
-                print(f"[*] Запускаем Xvfb на дисплее :{display}...")
-                xvfb_process = subprocess.Popen(["Xvfb", f":{display}", "-screen", "0", "1920x1080x24", "-ac", "+extension", "RANDR"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                os.environ["DISPLAY"] = f":{display}"
-                time.sleep(2)
-                break
-        else:
-            print("[-] Не удалось найти свободный дисплей для Xvfb.")
+        xvfb_process = start_xvfb(251, 300)
 
     if not os.path.exists("temp"): os.makedirs("temp")
     

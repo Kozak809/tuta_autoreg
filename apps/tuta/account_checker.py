@@ -22,6 +22,8 @@ from core import proxy_handler as proxy_fetcher
 from core import browser_factory as playwright_config
 from core.utils import human_delay, load_accounts
 
+from apps.tuta.tuta_utils import resolve_config_path, check_tuta_errors, start_xvfb, login_to_tuta
+
 # --- НАСТРОЙКИ ---
 MAX_WORKERS = 15            # Количество одновременных браузеров
 ACCOUNTS_FILE = "data/accounts.json"
@@ -29,23 +31,6 @@ LOCK_FILE = "data/accounts.lock"
 
 ACCOUNT_QUEUE = queue.Queue()
 PROXY_QUEUE = queue.Queue()
-
-def get_account_config(account):
-    config_path = account.get("config_path")
-    if config_path:
-        # Проверяем несколько вариантов пути, чтобы конфиг находился независимо от директории запуска
-        possible_paths = [
-            config_path, 
-            os.path.join(os.path.dirname(__file__), config_path),
-            os.path.join("apps", "tuta", config_path)
-        ]
-        for cp in possible_paths:
-            if os.path.exists(cp):
-                try:
-                    with open(cp, "r", encoding="utf-8") as f:
-                        return json.load(f), cp
-                except: pass
-    return None, None
 
 def save_result(account, status):
     now = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -80,44 +65,6 @@ def save_result(account, status):
             for acc in all_accounts:
                 f.write(json.dumps(acc) + "\n")
 
-def check_page_status(page):
-    """Проверка на критические ошибки на странице. Возвращает (status, is_critical)"""
-    try:
-        body_text = page.evaluate("() => document.body.innerText")
-        
-        # 1. Неверный логин
-        if "Invalid login credentials" in body_text or "Неверные данные для входа" in body_text:
-            return "INVALID", True
-        
-        # 2. Аккаунт забанен/отключен
-        ban_phrases = [
-            "Your account has been disabled", 
-            "Your account is temporarily locked",
-            "Account disabled",
-            "Аккаунт заблокирован"
-        ]
-        for phrase in ban_phrases:
-            if phrase in body_text:
-                return "BANNED", True
-        
-        # 3. Потеря соединения (нужен перезапуск с другим прокси)
-        lost_conn_texts = [
-            "The connection to the server was lost",
-            "Соединение с сервером потеряно"
-        ]
-        for msg in lost_conn_texts:
-            if msg in body_text:
-                return "CONNECTION_LOST", False
-        
-        # 4. IP Блок
-        block_phrases = ["ip address is temporarily blocked", "registration is blocked for this ip", "due to abuse", "access denied"]
-        for phrase in block_phrases:
-            if phrase in body_text.lower():
-                return "IP_BLOCKED", False
-
-    except: pass
-    return None, False
-
 def check_account_task(account, link, port, show_cursor, headless, saved_config=None):
     email = account['email']
     password = account['password']
@@ -130,7 +77,7 @@ def check_account_task(account, link, port, show_cursor, headless, saved_config=
         with sync_playwright() as pw:
             # Если конфиг не передан — пробуем загрузить его (для совместимости)
             if not saved_config:
-                saved_config, _ = get_account_config(account)
+                saved_config, _ = resolve_config_path(account.get("config_path"))
 
             if saved_config:
                 browser_config = saved_config.get("browser_config", {})
@@ -158,42 +105,21 @@ def check_account_task(account, link, port, show_cursor, headless, saved_config=
             human_delay(2, 4)
             
             # Проверка первичного блока IP
-            status, is_crit = check_page_status(page)
+            status, is_crit = check_tuta_errors(page)
             if status in ["IP_BLOCKED", "CONNECTION_LOST"]:
                 return "RETRY"
 
             # Ввод данных
             print(f"[*] [{email}] Проверка...")
             try:
-                page.wait_for_selector("input[type='email'], [data-testid='tfi:username']", timeout=20000)
-                u_field = page.locator("input[type='email']").first
-                if not u_field.is_visible(): u_field = page.get_by_test_id("tfi:username").locator("input").first
-                
-                cursor.click(u_field)
-                page.keyboard.type(email, delay=random.randint(30, 70))
-                
-                p_field = page.locator("input[type='password']").first
-                if not p_field.is_visible(): p_field = page.get_by_test_id("tfi:password").locator("input").first
-                
-                cursor.click(p_field)
-                page.keyboard.type(password, delay=random.randint(30, 70))
-                
-                # Клик по чекбоксу
-                try:
-                    checkbox = page.locator("input.checkbox.list-checkbox.click").first
-                    if checkbox.is_visible():
-                        cursor.click(checkbox)
-                except: pass
-
-                login_btn = page.get_by_test_id("btn:login_action")
-                cursor.click(login_btn)
+                login_to_tuta(page, cursor, email, password)
             except:
                 return "RETRY"
 
             # Ожидание результата
             start_wait = time.time()
             while time.time() - start_wait < 30:
-                status, is_crit = check_page_status(page)
+                status, is_crit = check_tuta_errors(page)
                 if is_crit:
                     save_result(account, status)
                     print(f"[-] [{email}] Результат: {status}")
@@ -282,16 +208,7 @@ def main():
     headless = args.headless
     if args.xvfb:
         headless = False # При Xvfb браузер должен быть в оконном режиме
-        xvfb_process = None
-        for display in range(200, 250): # Используем другой диапазон портов для чекера
-            if not os.path.exists(f"/tmp/.X11-unix/X{display}"):
-                print(f"[*] Запускаем Xvfb на дисплее :{display}...")
-                xvfb_process = subprocess.Popen(["Xvfb", f":{display}", "-screen", "0", "1920x1080x24", "-ac", "+extension", "RANDR"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                os.environ["DISPLAY"] = f":{display}"
-                time.sleep(2)
-                break
-        else:
-            print("[-] Не удалось найти свободный дисплей для Xvfb.")
+        xvfb_process = start_xvfb(200, 250)
 
     global ACCOUNTS_FILE
     ACCOUNTS_FILE = args.accounts

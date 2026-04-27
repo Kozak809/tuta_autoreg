@@ -17,7 +17,7 @@ from core.proxy_handler import ProxyManager
 from core.mouse_engine import HumanCursor
 from core import browser_factory as playwright_config
 from core.utils import human_delay, load_accounts, get_proxy_info, check_proxy_connectivity
-from apps.tuta.macro import check_block
+from apps.tuta.tuta_utils import check_block, login_to_tuta
 
 # Удалено: PROXY_COMMAND, update_proxies и human_delay перенесены/заменены на core модули
 
@@ -46,21 +46,9 @@ def send_tuta_email(username, password, to_address, subject, body, proxy_port=No
             
             if check_block(page): return 0
 
-            # Ввод логина
-            u_field = page.locator("input[type='email']")
-            u_field.wait_for(timeout=30000)
-            cursor.click(u_field)
-            u_field.press_sequentially(username, delay=random.randint(50, 100))
-            human_delay(0.5, 1.0)
+            # Ввод данных и логин
+            login_to_tuta(page, cursor, username, password)
             
-            # Ввод пароля
-            p_field = page.locator("input[type='password']")
-            cursor.click(p_field)
-            p_field.press_sequentially(password, delay=random.randint(50, 100))
-            human_delay(0.5, 1.0)
-            
-            # Нажимаем Login
-            page.keyboard.press("Enter")
             print(f"[*] [{username}] Ожидание загрузки почты...")
             
             # Ждем появления кнопки "Новое письмо"

@@ -28,21 +28,13 @@ def analyze_accounts(accounts_file):
                 cpath = acc.get('config_path', '')
                 
                 # Resolve config path
-                if not os.path.exists(cpath):
-                    # Пробуем относительно корня проекта
-                    full_cpath = os.path.join(root_dir, cpath)
-                    if not os.path.exists(full_cpath):
-                        # Пробуем внутри apps/tuta
-                        full_cpath = os.path.join(root_dir, 'apps', 'tuta', cpath)
-                    cpath = full_cpath
+                cfg, real_cpath = resolve_config_path(cpath)
                 
-                if os.path.exists(cpath):
-                    with open(cpath, 'r', encoding='utf-8') as cf:
-                        cfg = json.load(cf)
-                        if status == 'VALID':
-                            valid_configs.append(cfg)
-                        elif status == 'INVALID':
-                            invalid_configs.append(cfg)
+                if cfg:
+                    if status == 'VALID':
+                        valid_configs.append(cfg)
+                    elif status == 'INVALID':
+                        invalid_configs.append(cfg)
             except Exception as e:
                 pass
 

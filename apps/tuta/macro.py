@@ -45,19 +45,7 @@ def gen_password(length=14):
     random.shuffle(pwd_list)
     return "".join(pwd_list)
 
-# Удалено: check_block перенесен обратно в приложения (Tuta-specific)
-def check_block(page):
-    time.sleep(0.2)
-    try:
-        text = page.locator("body").inner_text().lower()
-    except:
-        return False
-    block_phrases = ["ip address is temporarily blocked", "registration is blocked for this ip", "due to abuse", "access denied", "try again later"]
-    for phrase in block_phrases:
-        if phrase in text:
-            print(f"[-] IP ЗАБЛОКИРОВАН (обнаружено: '{phrase}')")
-            return True
-    return False
+from apps.tuta.tuta_utils import check_block
 
 # Удалено: get_proxy_info перенесен в core.utils
 
