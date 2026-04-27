@@ -50,12 +50,9 @@ def analyze_accounts(accounts_file):
 
 def extract_proxy_country(proxy_str):
     if not proxy_str: return "Unknown"
-    # Look for emoji flags or ISO codes
-    # e.g., "ss://...#🇧🇷[www.v2nodes.com] Outline VPN-BR-11373291"
-    # we can just extract the part after '#' and then look at the text
+
     if '#' in proxy_str:
         tag = proxy_str.split('#', 1)[1]
-        # try to extract a 2-letter country code if formatted like VPN-BR
         match = re.search(r'-([A-Z]{2})-', tag)
         if match: return match.group(1)
         # try to extract ISO code from locale if we couldn't get it from proxy string easily
