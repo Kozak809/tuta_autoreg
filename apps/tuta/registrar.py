@@ -25,7 +25,7 @@ ACCOUNTS_FILE = os.path.join(os.path.dirname(__file__), "data/accounts.json")
 LOCK_FILE = os.path.join(os.path.dirname(__file__), "data/accounts.lock")
 xvfb_process = None
 
-TARGET_ACCOUNTS = 3
+TARGET_ACCOUNTS = 150
 MAX_WORKERS = 15
 ONLY_SUCCESS_LOGS = False
 SHOW_CURSOR = False
@@ -116,16 +116,15 @@ def worker_task(worker_id, initial_count, show_cursor, headless):
         time.sleep(random.uniform(1, 3))
 
 async def main():
+    global TARGET_ACCOUNTS, MAX_WORKERS, ONLY_SUCCESS_LOGS, SHOW_CURSOR, HEADLESS, USE_XVFB
     parser = argparse.ArgumentParser(description="Continuous multi-threaded account registrar for Tuta.")
-    parser.add_argument("target", type=int, nargs="?", default=3, help="Target number of accounts to create")
-    parser.add_argument("--workers", type=int, default=15, help="Number of concurrent browsers")
+    parser.add_argument("target", type=int, nargs="?", default=TARGET_ACCOUNTS, help=f"Target number of accounts to create (default: {TARGET_ACCOUNTS})")
+    parser.add_argument("--workers", type=int, default=MAX_WORKERS, help=f"Number of concurrent browsers (default: {MAX_WORKERS})")
     parser.add_argument("--nologs", action="store_true", help="Show only success logs")
     parser.add_argument("--show", action="store_true", help="Show browser and cursor")
     parser.add_argument("--headless", action="store_true", help="Run browser in headless mode")
     parser.add_argument("--noxvfb", action="store_true", help="Disable Xvfb (virtual display)")
     args = parser.parse_args()
-
-    global TARGET_ACCOUNTS, MAX_WORKERS, ONLY_SUCCESS_LOGS, SHOW_CURSOR, HEADLESS, USE_XVFB
     TARGET_ACCOUNTS = args.target
     MAX_WORKERS = args.workers
     ONLY_SUCCESS_LOGS = args.nologs
