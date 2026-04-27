@@ -1,0 +1,62 @@
+{
+    "proxy": "ss://YWVzLTI1Ni1nY206WmZiUEZEZGVCajBCMVR4cw@154.53.60.212:80#🇺🇸[www.v2nodes.com] Outline VPN-US-13537101",
+    "browser_config": {
+        "headless": false,
+        "channel": "chrome",
+        "args": [
+            "--disable-blink-features=AutomationControlled",
+            "--no-sandbox",
+            "--disable-infobars",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--disable-extensions",
+            "--disable-component-extensions-with-background-pages",
+            "--disable-default-apps",
+            "--mute-audio",
+            "--no-default-browser-check",
+            "--autoplay-policy=user-gesture-required",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-notifications",
+            "--disable-background-networking",
+            "--disable-breakpad",
+            "--disable-client-side-phishing-detection",
+            "--disable-sync",
+            "--metrics-recording-only"
+        ],
+        "proxy": {
+            "server": "socks5://127.0.0.1:11006"
+        }
+    },
+    "context_args": {
+        "viewport": {
+            "width": 1600,
+            "height": 765
+        },
+        "screen": {
+            "width": 1600,
+            "height": 900
+        },
+        "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+        "locale": "en-US",
+        "timezone_id": "America/Los_Angeles",
+        "device_scale_factor": 1.0,
+        "has_touch": false,
+        "permissions": [],
+        "extra_http_headers": {
+            "sec-ch-ua": "\"Chromium\";v=\"147\", \"Not A(Brand\";v=\"24\", \"Google Chrome\";v=\"147\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Linux\""
+        }
+    },
+    "hardware_info": {
+        "cores": 16,
+        "memory": 32,
+        "platform": "Linux x86_64",
+        "gpu": [
+            "Intel Open Source Technology Center",
+            "Mesa DRI Intel(R) HD Graphics 620 (Kaby Lake GT2)"
+        ]
+    },
+    "timestamp": "2026-04-24 16:56:39"
+}

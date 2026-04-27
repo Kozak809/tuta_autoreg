@@ -1,0 +1,62 @@
+{
+    "proxy": "ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpBUmd2R1p5d0ErZ2FjZ0dWMjZCdm11MDUrd1ptUlcvaitBZFUrWjhCdDQ0PQ@38.54.57.90:990#🇧🇷[www.v2nodes.com] Outline VPN-BR-11373291",
+    "browser_config": {
+        "headless": false,
+        "channel": "chrome",
+        "args": [
+            "--disable-blink-features=AutomationControlled",
+            "--no-sandbox",
+            "--disable-infobars",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--disable-extensions",
+            "--disable-component-extensions-with-background-pages",
+            "--disable-default-apps",
+            "--mute-audio",
+            "--no-default-browser-check",
+            "--autoplay-policy=user-gesture-required",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-notifications",
+            "--disable-background-networking",
+            "--disable-breakpad",
+            "--disable-client-side-phishing-detection",
+            "--disable-sync",
+            "--metrics-recording-only"
+        ],
+        "proxy": {
+            "server": "socks5://127.0.0.1:24003"
+        }
+    },
+    "context_args": {
+        "viewport": {
+            "width": 1440,
+            "height": 778
+        },
+        "screen": {
+            "width": 1440,
+            "height": 900
+        },
+        "user_agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+        "locale": "br-BR",
+        "timezone_id": "America/Sao_Paulo",
+        "device_scale_factor": 1.0,
+        "has_touch": false,
+        "permissions": [],
+        "extra_http_headers": {
+            "sec-ch-ua": "\"Chromium\";v=\"147\", \"Not A(Brand\";v=\"24\", \"Google Chrome\";v=\"147\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Linux\""
+        }
+    },
+    "hardware_info": {
+        "cores": 12,
+        "memory": 32,
+        "platform": "Linux x86_64",
+        "gpu": [
+            "Intel",
+            "Mesa Intel(R) UHD Graphics (ADL-S GT1)"
+        ]
+    },
+    "timestamp": "2026-04-24 16:52:55"
+}

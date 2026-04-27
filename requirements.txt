@@ -1,7 +1,8 @@
 playwright
 playwright-stealth
-requests
+requests[socks]
 pillow
 numpy
 scipy
 python-dotenv
+faker

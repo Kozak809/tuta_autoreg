@@ -1,0 +1,62 @@
+{
+    "proxy": "vless://6202b230-417c-4d8e-b624-0f71afa9c75d@116.93.199.28:12136?path=/?ed=2560&Telegram🇮🇷 @ShadowProxy66&security=tls&encryption=none&insecure=1&host=sni.111000.indevs.in&type=ws&allowInsecure=1&sni=sni.111000.indevs.in#🇰🇷[www.v2nodes.com] V2Ray Vless-KR-321734",
+    "browser_config": {
+        "headless": false,
+        "channel": "chrome",
+        "args": [
+            "--disable-blink-features=AutomationControlled",
+            "--no-sandbox",
+            "--disable-infobars",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--disable-extensions",
+            "--disable-component-extensions-with-background-pages",
+            "--disable-default-apps",
+            "--mute-audio",
+            "--no-default-browser-check",
+            "--autoplay-policy=user-gesture-required",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-notifications",
+            "--disable-background-networking",
+            "--disable-breakpad",
+            "--disable-client-side-phishing-detection",
+            "--disable-sync",
+            "--metrics-recording-only"
+        ],
+        "proxy": {
+            "server": "socks5://127.0.0.1:16033"
+        }
+    },
+    "context_args": {
+        "viewport": {
+            "width": 1366,
+            "height": 651
+        },
+        "screen": {
+            "width": 1366,
+            "height": 768
+        },
+        "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+        "locale": "kr-KR",
+        "timezone_id": "Asia/Seoul",
+        "device_scale_factor": 1.0,
+        "has_touch": false,
+        "permissions": [],
+        "extra_http_headers": {
+            "sec-ch-ua": "\"Chromium\";v=\"147\", \"Not(A:Brand\";v=\"99\", \"Google Chrome\";v=\"147\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Linux\""
+        }
+    },
+    "hardware_info": {
+        "cores": 16,
+        "memory": 16,
+        "platform": "Linux x86_64",
+        "gpu": [
+            "NVIDIA Corporation",
+            "NVIDIA GeForce GTX 1660 SUPER/PCIe/SSE2"
+        ]
+    },
+    "timestamp": "2026-04-24 17:36:31"
+}

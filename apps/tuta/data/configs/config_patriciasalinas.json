@@ -1,0 +1,62 @@
+{
+    "proxy": "vless://3264ccbe-dbc5-4d14-8dbe-1c62041cc43f@104.18.46.50:443?&security=tls&fp=ios&sni=sk-hk1.feimavip.sbs&type=ws&headerType=none&host=sk-hk1.feimavip.sbs&path=%2Fhk%2F1#🇭🇰[www.v2nodes.com] V2Ray Vless-HK-13742674",
+    "browser_config": {
+        "headless": false,
+        "channel": "chrome",
+        "args": [
+            "--disable-blink-features=AutomationControlled",
+            "--no-sandbox",
+            "--disable-infobars",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--disable-extensions",
+            "--disable-component-extensions-with-background-pages",
+            "--disable-default-apps",
+            "--mute-audio",
+            "--no-default-browser-check",
+            "--autoplay-policy=user-gesture-required",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-notifications",
+            "--disable-background-networking",
+            "--disable-breakpad",
+            "--disable-client-side-phishing-detection",
+            "--disable-sync",
+            "--metrics-recording-only"
+        ],
+        "proxy": {
+            "server": "socks5://127.0.0.1:16006"
+        }
+    },
+    "context_args": {
+        "viewport": {
+            "width": 1366,
+            "height": 652
+        },
+        "screen": {
+            "width": 1366,
+            "height": 768
+        },
+        "user_agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+        "locale": "hk-HK",
+        "timezone_id": "Asia/Hong_Kong",
+        "device_scale_factor": 1.0,
+        "has_touch": false,
+        "permissions": [],
+        "extra_http_headers": {
+            "sec-ch-ua": "\"Chromium\";v=\"147\", \"Not A(Brand\";v=\"24\", \"Google Chrome\";v=\"147\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Linux\""
+        }
+    },
+    "hardware_info": {
+        "cores": 12,
+        "memory": 16,
+        "platform": "Linux x86_64",
+        "gpu": [
+            "NVIDIA Corporation",
+            "NVIDIA GeForce RTX 2060/PCIe/SSE2"
+        ]
+    },
+    "timestamp": "2026-04-26 21:09:47"
+}

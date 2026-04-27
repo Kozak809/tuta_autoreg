@@ -1,0 +1,62 @@
+{
+    "proxy": "vless://06b65903-406d-4a41-8463-6fd5c0ee7798@219.76.13.167:443?encryption=none&security=tls&sni=sn1.skylee5.cloudns.ch&type=ws&host=sn1.skylee5.cloudns.ch&path=%2Fproxyip%3Dproxyip.cmliussss.net#🇭🇰[www.v2nodes.com] V2Ray Vless-HK-4646",
+    "browser_config": {
+        "headless": false,
+        "channel": "chrome",
+        "args": [
+            "--disable-blink-features=AutomationControlled",
+            "--no-sandbox",
+            "--disable-infobars",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--disable-extensions",
+            "--disable-component-extensions-with-background-pages",
+            "--disable-default-apps",
+            "--mute-audio",
+            "--no-default-browser-check",
+            "--autoplay-policy=user-gesture-required",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-notifications",
+            "--disable-background-networking",
+            "--disable-breakpad",
+            "--disable-client-side-phishing-detection",
+            "--disable-sync",
+            "--metrics-recording-only"
+        ],
+        "proxy": {
+            "server": "socks5://127.0.0.1:13045"
+        }
+    },
+    "context_args": {
+        "viewport": {
+            "width": 1920,
+            "height": 965
+        },
+        "screen": {
+            "width": 1920,
+            "height": 1080
+        },
+        "user_agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+        "locale": "hk-HK",
+        "timezone_id": "Asia/Hong_Kong",
+        "device_scale_factor": 1.25,
+        "has_touch": false,
+        "permissions": [],
+        "extra_http_headers": {
+            "sec-ch-ua": "\"Chromium\";v=\"147\", \"Not(A:Brand\";v=\"99\", \"Google Chrome\";v=\"147\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Linux\""
+        }
+    },
+    "hardware_info": {
+        "cores": 8,
+        "memory": 32,
+        "platform": "Linux x86_64",
+        "gpu": [
+            "AMD",
+            "AMD Radeon RX 6700 XT (NAVY_FLOUNDER, DRM 3.42.0, 5.15.0-76-generic, LLVM 12.0.0)"
+        ]
+    },
+    "timestamp": "2026-04-26 22:13:38"
+}

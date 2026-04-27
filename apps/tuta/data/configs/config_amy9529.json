@@ -1,0 +1,62 @@
+{
+    "proxy": "vless://8007e155-622e-4c9d-8a6e-67f49b4678f4@193.219.99.196:8443?&security=tls&sni=edt2-lgy.pages.dev&type=ws&headerType=none&host=edt2-lgy.pages.dev&path=%2F#🇬🇧[www.v2nodes.com] V2Ray Vless-GB-1976767",
+    "browser_config": {
+        "headless": false,
+        "channel": "chrome",
+        "args": [
+            "--disable-blink-features=AutomationControlled",
+            "--no-sandbox",
+            "--disable-infobars",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--disable-extensions",
+            "--disable-component-extensions-with-background-pages",
+            "--disable-default-apps",
+            "--mute-audio",
+            "--no-default-browser-check",
+            "--autoplay-policy=user-gesture-required",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-notifications",
+            "--disable-background-networking",
+            "--disable-breakpad",
+            "--disable-client-side-phishing-detection",
+            "--disable-sync",
+            "--metrics-recording-only"
+        ],
+        "proxy": {
+            "server": "socks5://127.0.0.1:15029"
+        }
+    },
+    "context_args": {
+        "viewport": {
+            "width": 1440,
+            "height": 780
+        },
+        "screen": {
+            "width": 1440,
+            "height": 900
+        },
+        "user_agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+        "locale": "gb-GB",
+        "timezone_id": "Europe/London",
+        "device_scale_factor": 1.0,
+        "has_touch": false,
+        "permissions": [],
+        "extra_http_headers": {
+            "sec-ch-ua": "\"Chromium\";v=\"147\", \"Not(A:Brand\";v=\"99\", \"Google Chrome\";v=\"147\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Linux\""
+        }
+    },
+    "hardware_info": {
+        "cores": 16,
+        "memory": 16,
+        "platform": "Linux x86_64",
+        "gpu": [
+            "AMD",
+            "AMD Radeon RX 5700 XT (NAVI10, DRM 3.40.0, 5.11.0-49-generic, LLVM 12.0.0)"
+        ]
+    },
+    "timestamp": "2026-04-26 22:02:07"
+}

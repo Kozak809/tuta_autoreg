@@ -1,0 +1,62 @@
+{
+    "proxy": "vmess://eyJhZGQiOiI0NS4xNS4xODUuMTciLCJob3N0IjoiNDUuMTUuMTg1LjE3IiwiaWQiOiJjNTAzYTk2YS1hMmY1LTQ4NDctYTMxZi0yMGMxN2VjZjNiZTQiLCJuZXQiOiJ3cyIsInBhdGgiOiJcL3ZtZXNzXC8iLCJwb3J0Ijo4MCwicHMiOiJcdWQ4M2NcdWRkZTZcdWQ4M2NcdWRkZmFbd3d3LnYybm9kZXMuY29tXSBWMlJheSBWbWVzcy1BVS0xMjg3MTU2MSIsInNraXAtY2VydC12ZXJpZnkiOnRydWUsInR5cGUiOiJub25lIiwidiI6IjIifQ==",
+    "browser_config": {
+        "headless": false,
+        "channel": "chrome",
+        "args": [
+            "--disable-blink-features=AutomationControlled",
+            "--no-sandbox",
+            "--disable-infobars",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--disable-extensions",
+            "--disable-component-extensions-with-background-pages",
+            "--disable-default-apps",
+            "--mute-audio",
+            "--no-default-browser-check",
+            "--autoplay-policy=user-gesture-required",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-notifications",
+            "--disable-background-networking",
+            "--disable-breakpad",
+            "--disable-client-side-phishing-detection",
+            "--disable-sync",
+            "--metrics-recording-only"
+        ],
+        "proxy": {
+            "server": "socks5://127.0.0.1:18016"
+        }
+    },
+    "context_args": {
+        "viewport": {
+            "width": 1920,
+            "height": 965
+        },
+        "screen": {
+            "width": 1920,
+            "height": 1080
+        },
+        "user_agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+        "locale": "au-AU",
+        "timezone_id": "Australia/Sydney",
+        "device_scale_factor": 1.25,
+        "has_touch": false,
+        "permissions": [],
+        "extra_http_headers": {
+            "sec-ch-ua": "\"Chromium\";v=\"147\", \"Not_A Brand\";v=\"8\", \"Google Chrome\";v=\"147\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Linux\""
+        }
+    },
+    "hardware_info": {
+        "cores": 12,
+        "memory": 8,
+        "platform": "Linux x86_64",
+        "gpu": [
+            "AMD",
+            "AMD Radeon RX 6800 (SIENNA_CICHLID, DRM 3.42.0, 5.15.0-76-generic, LLVM 12.0.0)"
+        ]
+    },
+    "timestamp": "2026-04-24 17:11:00"
+}

@@ -1,0 +1,64 @@
+{
+    "proxy": "vless://cff6f361-828a-43c8-a8b5-8d10b32e57fb@188.114.98.0:443?path=%2F&security=tls&alpn=http%2F1.1&encryption=none&host=zh.hollowspot.ir&fp=chrome&type=ws&sni=zh.hollowspot.ir#🇸🇬[www.v2nodes.com] V2Ray Vless-SG-2775",
+    "browser_config": {
+        "headless": true,
+        "channel": "chrome",
+        "args": [
+            "--disable-blink-features=AutomationControlled",
+            "--no-sandbox",
+            "--disable-infobars",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--disable-extensions",
+            "--disable-component-extensions-with-background-pages",
+            "--disable-default-apps",
+            "--mute-audio",
+            "--no-default-browser-check",
+            "--autoplay-policy=user-gesture-required",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-notifications",
+            "--disable-background-networking",
+            "--disable-breakpad",
+            "--disable-client-side-phishing-detection",
+            "--disable-sync",
+            "--metrics-recording-only"
+        ],
+        "proxy": {
+            "server": "socks5://127.0.0.1:13002"
+        }
+    },
+    "context_args": {
+        "viewport": {
+            "width": 1440,
+            "height": 900
+        },
+        "screen": {
+            "width": 1440,
+            "height": 900
+        },
+        "user_agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.7727.116 Safari/537.36",
+        "locale": "at-AT",
+        "timezone_id": "Europe/Vienna",
+        "device_scale_factor": 1.0,
+        "has_touch": false,
+        "permissions": [
+            "notifications"
+        ],
+        "extra_http_headers": {
+            "sec-ch-ua": "\"Chromium\";v=\"147\", \"Not(A:Brand\";v=\"24\", \"Google Chrome\";v=\"147\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Linux\""
+        }
+    },
+    "hardware_info": {
+        "cores": 8,
+        "memory": 8,
+        "platform": "Linux x86_64",
+        "gpu": [
+            "NVIDIA Corporation",
+            "NVIDIA GeForce RTX 4070/PCIe/SSE2"
+        ]
+    },
+    "timestamp": "2026-04-24 12:50:17"
+}
