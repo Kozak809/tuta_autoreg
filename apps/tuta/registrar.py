@@ -13,6 +13,7 @@ import random
 import queue
 import threading
 import builtins
+import argparse
 from concurrent.futures import ThreadPoolExecutor
 from filelock import FileLock
 from apps.tuta import macro
@@ -20,15 +21,16 @@ from core import proxy_handler as proxy_fetcher
 from apps.tuta.tuta_utils import start_xvfb
 
 # --- НАСТРОЙКИ КОНВЕЙЕРА И ПАРСИНГ АРГУМЕНТОВ ---
-ACCOUNTS_FILE = "data/accounts.json"
-LOCK_FILE = "data/accounts.lock"
+ACCOUNTS_FILE = os.path.join(os.path.dirname(__file__), "data/accounts.json")
+LOCK_FILE = os.path.join(os.path.dirname(__file__), "data/accounts.lock")
+xvfb_process = None
 
 TARGET_ACCOUNTS = 3
 MAX_WORKERS = 15
 ONLY_SUCCESS_LOGS = False
 SHOW_CURSOR = False
 HEADLESS = False
-USE_XVFB = False
+USE_XVFB = True
 
 # --- ФИЛЬТРАЦИЯ ЛОГОВ ---
 def custom_print(*args, **kwargs):
@@ -114,6 +116,30 @@ def worker_task(worker_id, initial_count, show_cursor, headless):
         time.sleep(random.uniform(1, 3))
 
 async def main():
+    parser = argparse.ArgumentParser(description="Continuous multi-threaded account registrar for Tuta.")
+    parser.add_argument("target", type=int, nargs="?", default=3, help="Target number of accounts to create")
+    parser.add_argument("--workers", type=int, default=15, help="Number of concurrent browsers")
+    parser.add_argument("--nologs", action="store_true", help="Show only success logs")
+    parser.add_argument("--show", action="store_true", help="Show browser and cursor")
+    parser.add_argument("--headless", action="store_true", help="Run browser in headless mode")
+    parser.add_argument("--noxvfb", action="store_true", help="Disable Xvfb (virtual display)")
+    args = parser.parse_args()
+
+    global TARGET_ACCOUNTS, MAX_WORKERS, ONLY_SUCCESS_LOGS, SHOW_CURSOR, HEADLESS, USE_XVFB
+    TARGET_ACCOUNTS = args.target
+    MAX_WORKERS = args.workers
+    ONLY_SUCCESS_LOGS = args.nologs
+    SHOW_CURSOR = args.show
+    HEADLESS = args.headless
+    USE_XVFB = not args.noxvfb
+
+    if USE_XVFB:
+        HEADLESS = False
+
+    if not hasattr(builtins, "_original_print"):
+        builtins._original_print = builtins.print
+        builtins.print = custom_print
+
     os.makedirs("temp/captcha_images", exist_ok=True)
     os.makedirs("logs/sessions", exist_ok=True)
     os.makedirs("data/configs", exist_ok=True)
@@ -135,49 +161,6 @@ async def main():
 
     try:
         while True:
-            current_count = get_success_count()
-            if current_count - initial_count >= TARGET_ACCOUNTS:
-                print(f"[*] Цель достигнута. Принудительно завершаем работу всех потоков...")
-                break
-
-            # Если очередь прокси пустеет — подливаем новые
-            if PROXY_QUEUE.qsize() < MAX_WORKERS * 2:
-                print("[*] Очередь прокси пуста, запрашиваю новые...")
-                links = proxy_fetcher.update_proxies_python()
-                if links:
-                    for l in links:
-                        PROXY_QUEUE.put(l)
-                    print(f"[+] Добавлено {len(links)} прокси в очередь.")
-                else:
-                    print("[-] Прокси не получены, ждем 20 сек...")
-            
-            await asyncio.sleep(20)
-    except KeyboardInterrupt:
-        print("[!] Остановка пользователем...")
-    finally:
-        executor.shutdown(wait=False)
-        final_count = get_success_count()
-        print(f"[+++] ВСЕГО СОЗДАНО: {final_count - initial_count}. Остановка дочерних процессов (браузеров)...")
-        try:
-            parent = psutil.Process(os.getpid())
-            children = parent.children(recursive=True)
-            for child in children:
-                try: child.kill()
-                except Exception: pass
-            psutil.wait_procs(children, timeout=3)
-        except Exception:
-            pass
-            
-        if 'xvfb_process' in globals() and xvfb_process:
-            try: xvfb_process.kill()
-            except: pass
-            
-        print("[+++] Скрипт полностью остановлен.")
-        os._exit(0)
-
-if __name__ == "__main__":
-    asyncio.run(main())
-hile True:
             current_count = get_success_count()
             if current_count - initial_count >= TARGET_ACCOUNTS:
                 print(f"[*] Цель достигнута. Принудительно завершаем работу всех потоков...")

@@ -12,18 +12,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 
 import time
 import json
-import random
-import requests
-import re
 import argparse
 import queue
 import threading
-import subprocess
-from concurrent.futures import ThreadPoolExecutor
 from filelock import FileLock
 from playwright.sync_api import sync_playwright
 from core.proxy_handler import ProxyManager
-from core.mouse_engine import HumanCursor
 from core import proxy_handler as proxy_fetcher
 from core import browser_factory as playwright_config
 from core.utils import human_delay, load_accounts
@@ -205,16 +199,18 @@ def worker_thread(worker_id, show_cursor, headless):
 def main():
     parser = argparse.ArgumentParser(description="Tuta Account Checker (Parallel)")
     parser.add_argument("--workers", type=int, default=MAX_WORKERS, help="Number of workers")
-    parser.add_argument("--accounts", default="data/accounts.json", help="Path to accounts JSON file")
+    parser.add_argument("--accounts", default=os.path.join(os.path.dirname(__file__), "data/accounts.json"), help="Path to accounts JSON file")
     parser.add_argument("--show", action="store_true", help="Show cursor")
     parser.add_argument("--headless", action="store_true", default=False, help="Run browser in headless mode")
-    parser.add_argument("--xvfb", action="store_true", help="Run browser in Xvfb (virtual display)")
+    parser.add_argument("--noxvfb", action="store_true", help="Disable Xvfb (virtual display)")
     args = parser.parse_args()
 
+    use_xvfb = not args.noxvfb
     headless = args.headless
-    if args.xvfb:
-        headless = False # При Xvfb браузер должен быть в оконном режиме
-        xvfb_process = start_xvfb(200, 250)
+    xvfb_process = None
+    if use_xvfb:
+        headless = False
+        xvfb_process = start_xvfb(99, 120)
 
     global ACCOUNTS_FILE
     ACCOUNTS_FILE = args.accounts
@@ -253,7 +249,7 @@ def main():
 
     print("[*] Проверка завершена.")
     
-    if args.xvfb and 'xvfb_process' in locals() and xvfb_process:
+    if xvfb_process:
         print("[*] Остановка Xvfb...")
         xvfb_process.kill()
 

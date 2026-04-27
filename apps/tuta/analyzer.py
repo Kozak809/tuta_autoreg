@@ -9,6 +9,7 @@ import json
 import os
 import re
 from collections import defaultdict
+from apps.tuta.tuta_utils import resolve_config_path
 
 # Resolve paths using script directory
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -106,7 +107,7 @@ def aggregate_stats(configs):
     
     return stats
 
-v, i = analyze_accounts('apps/tuta/data/accounts.json')
+v, i = analyze_accounts(os.path.join(os.path.dirname(__file__), 'data/accounts.json'))
 
 v_stats = aggregate_stats(v)
 i_stats = aggregate_stats(i)

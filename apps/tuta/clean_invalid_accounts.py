@@ -7,6 +7,7 @@ their corresponding configuration files to maintain a clean account pool.
 """
 import json
 import os
+from apps.tuta.tuta_utils import resolve_config_path
 
 def clean_invalid_accounts():
     # Получаем путь к директории apps/tuta

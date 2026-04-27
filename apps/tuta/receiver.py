@@ -13,21 +13,17 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 import time
 import json
 import random
-import requests
 import shutil
 import re
 import argparse
 import subprocess
 from playwright.sync_api import sync_playwright
 from core.proxy_handler import ProxyManager
-from core.mouse_engine import HumanCursor
 from core import proxy_handler as proxy_fetcher
 from core import browser_factory as playwright_config
 from core.utils import human_delay, load_accounts, get_proxy_info, check_proxy_connectivity
-from apps.tuta.macro import check_block
-from apps.tuta.tuta_utils import resolve_config_path, check_tuta_errors, start_xvfb, login_to_tuta
+from apps.tuta.tuta_utils import resolve_config_path, check_tuta_errors, start_xvfb, login_to_tuta, check_block
 
-# Удалено: human_delay перенесен в core.utils
 
 def select_account(file_path, email_arg=None):
     accounts = load_accounts(file_path)
@@ -62,7 +58,6 @@ def select_account(file_path, email_arg=None):
         print("[-] Ошибка ввода, берем последний.")
         return accounts[-1]
 
-# Удалено: check_proxy_connectivity перенесен в core.proxy_handler
 
 def run_receiver(account, show_cursor=True, headless=False, one_code=False):
     email = account['email']
@@ -181,7 +176,7 @@ def run_receiver(account, show_cursor=True, headless=False, one_code=False):
                 start_wait = time.time()
                 success_login = False
                 while time.time() - start_wait < 60:
-                    check_page_status(page) # Мгновенная проверка на критические ошибки
+                    check_tuta_errors(page) # Мгновенная проверка на критические ошибки
                     
                     # Ищем признаки успеха
                     success_selectors = [
@@ -378,7 +373,7 @@ def run_receiver(account, show_cursor=True, headless=False, one_code=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Tuta Email Receiver with Anti-Bot Protection.")
     parser.add_argument("--email", help="Email to login")
-    parser.add_argument("--accounts", default="data/accounts.json", help="Path to accounts JSON file")
+    parser.add_argument("--accounts", default=os.path.join(os.path.dirname(__file__), "data/accounts.json"), help="Path to accounts JSON file")
     parser.add_argument("--noshow", action="store_true", help="Don't show browser cursor")
     parser.add_argument("--headless", action="store_true", help="Run browser in headless mode")
     parser.add_argument("--xvfb", action="store_true", help="Run browser in Xvfb (virtual display)")

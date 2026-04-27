@@ -5,14 +5,11 @@ This module handles the core logic of registering a new Tuta email account. It
 navigates the signup process, generates random credentials, solves captchas,
 handles recovery codes, and saves the successful account configurations.
 """
-import time, random, string, requests, os, shutil, re, json
-import numpy as np
-from scipy.special import comb
+import time, random, string, os, shutil, re, json
 from playwright.sync_api import sync_playwright
 from faker import Faker
 from core import captcha_solver as capcha_solver
 from core import proxy_handler as proxy
-from core.mouse_engine import HumanCursor
 from core import browser_factory as playwright_config
 from core.utils import human_delay, get_proxy_info, check_proxy_connectivity
 
@@ -53,9 +50,7 @@ def gen_password(length=14):
 
 from apps.tuta.tuta_utils import check_block
 
-# Удалено: get_proxy_info перенесен в core.utils
 
-# Удалено: check_proxy_connectivity перенесен в core.proxy_handler
 
 import shutil
 
