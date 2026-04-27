@@ -48,40 +48,33 @@ python install.py
 
 ### Automated Registration
 
-**Sequential Mode (Low intensity):**
+**Conveyor Mode (Continuous registration):**
 ```bash
-python main.py 10 --show
+python -m apps.tuta.registrar 10 --show
 ```
 *   `10`: Number of accounts to create.
 *   `--show`: (Optional) Show visual cursor movement.
-
-**Parallel Mode (High intensity / Conveyor):**
-```bash
-python main_parallel.py 50 --workers 10 --headless
-```
-*   `50`: Target number of accounts.
-*   `--workers 10`: Number of simultaneous browsers.
-*   `--headless`: Run browsers in the background.
-*   `--logs`: Only show success/fail summaries.
+*   `--headless`: (Optional) Run browsers in the background.
+*   `--nologs`: (Optional) Only show success/fail summaries.
 
 ### Account Utilities
 
 **Status Checker:**
-Validates accounts in `accounts.json` and saves results to `checked_results.json`.
+Validates accounts in `data/accounts.json` and saves results to `data/checked_results.json`.
 ```bash
-python checker.py --workers 15
+python -m apps.tuta.account_checker --workers 15
 ```
 
 **Email Sender:**
 Send emails using your registered accounts.
 ```bash
-python sender.py --to target@example.com --subject "Hello" --body "Test message" --accounts-num 5
+python -m apps.tuta.mail_sender --to target@example.com --subject "Hello" --body "Test message" --accounts-num 5
 ```
 
 **Email Receiver (Real-time monitor):**
 Login to an account and monitor for incoming messages.
 ```bash
-python receiver.py --email yourname@tutamail.com
+python -m apps.tuta.mail_receiver --email yourname@tutamail.com
 ```
 
 ---
