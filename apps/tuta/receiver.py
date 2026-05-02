@@ -68,10 +68,12 @@ def run_receiver(account, show_cursor=True, headless=False, one_code=False):
     saved_config = None
     if config_path:
         # Проверяем несколько вариантов пути, чтобы конфиг находился независимо от директории запуска
+        root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
         possible_paths = [
-            config_path, # если запускаем из apps/tuta
-            os.path.join(os.path.dirname(__file__), config_path), # относительно скрипта
-            os.path.join("apps", "tuta", config_path) # если запускаем из корня проекта
+            config_path, 
+            os.path.join(os.path.dirname(__file__), config_path),
+            os.path.join(root_dir, config_path),
+            os.path.join(root_dir, config_path.replace("data/configs/", "data/configs_tuta/"))
         ]
         
         for cp in possible_paths:
@@ -85,34 +87,33 @@ def run_receiver(account, show_cursor=True, headless=False, one_code=False):
                     print(f"[-] Ошибка чтения конфига: {e}")
 
     success = False
-    
     # 1. Попробуем сначала прокси из конфига
     links_to_try = []
     if saved_config and saved_config.get("proxy"):
         links_to_try.append(saved_config["proxy"])
         print(f"[*] Добавлен прокси из конфига: {saved_config['proxy'][:30]}...")
 
-    if not links_to_try:
-        # 2. Подготовим остальные прокси как запасной вариант
-        print("[*] Обновление запасных прокси...")
+    def load_fallback_proxies():
+        """Обновляет и загружает запасные прокси из файла."""
+        print("[*] Обновление списка прокси...")
         proxy_fetcher.update_proxies_python()
         possible_paths = [
             os.path.join(os.path.dirname(__file__), "..", "..", "data", "proxy_list.txt"),
             os.path.abspath(os.path.join(os.getcwd(), "data", "proxy_list.txt")),
             "data/proxy_list.txt"
         ]
-        proxy_path = None
         for p in possible_paths:
             if os.path.exists(p):
-                proxy_path = p
-                break
-                
-        if proxy_path:
-            with open(proxy_path, "r", encoding="utf-8") as f:
-                fallback_links = [l.strip() for l in f if l.lower().startswith(("vless://", "trojan://", "ss://", "vmess://"))]
-                random.shuffle(fallback_links)
-                links_to_try.extend(fallback_links[:10])
-                
+                with open(p, "r", encoding="utf-8") as f:
+                    fallback = [l.strip() for l in f if l.lower().startswith(("vless://", "trojan://", "ss://", "vmess://"))]
+                    random.shuffle(fallback)
+                    return fallback[:10]
+        return []
+
+    # Если нет конфиг-прокси — сразу загружаем fallback
+    if not links_to_try:
+        links_to_try = load_fallback_proxies()
+
     if not links_to_try:
         print("[-] Прокси не найдены ни в конфиге, ни в списке.")
         return
@@ -124,9 +125,23 @@ def run_receiver(account, show_cursor=True, headless=False, one_code=False):
             continue
             
         print(f"[*] Проверка прокси {link[:30]}...")
-        if not check_proxy_connectivity(port):
-            print("[-] Прокси не прошел проверку связи. Пробуем следующий...")
+        connected = False
+        for attempt in range(1, 4):
+            if check_proxy_connectivity(port):
+                connected = True
+                break
+            print(f"[-] Попытка {attempt}/3 — прокси не отвечает. {'Пробуем ещё...' if attempt < 3 else ''}")
+            if attempt < 3:
+                time.sleep(3)
+        
+        if not connected:
             pm.stop()
+            # Если это был конфиг-прокси (первый) — подгружаем fallback
+            if link == links_to_try[0] and len(links_to_try) == 1:
+                fallback = load_fallback_proxies()
+                fallback = [l for l in fallback if l != link]
+                links_to_try.extend(fallback)
+                print(f"[+] Загружено {len(fallback)} запасных прокси.")
             continue
 
         proxy_info = get_proxy_info(port)
@@ -279,7 +294,13 @@ def run_receiver(account, show_cursor=True, headless=False, one_code=False):
                 last_count = len(items)
                 print(f"[*] Мониторинг запущен. Реальных писем обнаружено: {last_count}")
                 if last_count > 0:
-                    print(f"[*] Текст последнего письма: {get_msg_body(items[0])}")
+                    body = get_msg_body(items[0])
+                    print(f"[*] Текст последнего письма: {body}")
+                    if one_code:
+                        found = re.findall(r'(?<!\d)\d{6}(?!\d)', body)
+                        if found:
+                            print(f"CODE_FOUND:{found[0]}", flush=True)
+                            return found[0]
                 
                 success = True
                 while True:
@@ -373,7 +394,7 @@ def run_receiver(account, show_cursor=True, headless=False, one_code=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Tuta Email Receiver with Anti-Bot Protection.")
     parser.add_argument("--email", help="Email to login")
-    parser.add_argument("--accounts", default=os.path.join(os.path.dirname(__file__), "data/accounts.json"), help="Path to accounts JSON file")
+    parser.add_argument("--accounts", default=os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data", "accounts.json")), help="Path to accounts JSON file")
     parser.add_argument("--noshow", action="store_true", help="Don't show browser cursor")
     parser.add_argument("--headless", action="store_true", help="Run browser in headless mode")
     parser.add_argument("--xvfb", action="store_true", help="Run browser in Xvfb (virtual display)")

@@ -42,6 +42,30 @@ class HumanCursor:
             const cursor = document.getElementById('human-cursor-dot');
             if (cursor) cursor.style.transform = `translate(${x}px, ${y}px)`;
         };
+        window.animateClick = (x, y) => {
+            const ripple = document.createElement('div');
+            ripple.style.position = 'fixed';
+            ripple.style.width = '20px';
+            ripple.style.height = '20px';
+            ripple.style.backgroundColor = 'rgba(255, 0, 0, 0.5)';
+            ripple.style.borderRadius = '50%';
+            ripple.style.zIndex = '9999998';
+            ripple.style.pointerEvents = 'none';
+            ripple.style.left = `${x + 7}px`;
+            ripple.style.top = `${y + 7}px`;
+            ripple.style.transform = 'translate(-50%, -50%) scale(1)';
+            ripple.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+            document.documentElement.appendChild(ripple);
+            
+            void ripple.offsetWidth; // force reflow
+            
+            ripple.style.transform = 'translate(-50%, -50%) scale(3)';
+            ripple.style.opacity = '0';
+            
+            setTimeout(() => {
+                if (ripple.parentNode) ripple.parentNode.removeChild(ripple);
+            }, 300);
+        };
         new MutationObserver(ensureCursor).observe(document.documentElement, {childList: true, subtree: true});
         ensureCursor();
         """
@@ -128,6 +152,9 @@ class HumanCursor:
 
     def click(self, locator):
         if self.move_to(locator):
+            if self.show:
+                try: self.page.evaluate(f"window.animateClick({self.cur_x}, {self.cur_y})")
+                except: pass
             # Мгновенный человеческий клик
             self.page.mouse.down()
             time.sleep(random.uniform(0.01, 0.03))

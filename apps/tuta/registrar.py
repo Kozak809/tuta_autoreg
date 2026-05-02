@@ -21,7 +21,7 @@ from core import proxy_handler as proxy_fetcher
 from apps.tuta.tuta_utils import start_xvfb
 
 # --- НАСТРОЙКИ КОНВЕЙЕРА И ПАРСИНГ АРГУМЕНТОВ ---
-ACCOUNTS_FILE = os.path.join(os.path.dirname(__file__), "data/accounts.json")
+ACCOUNTS_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data", "accounts.json"))
 LOCK_FILE = os.path.join(os.path.dirname(__file__), "data/accounts.lock")
 xvfb_process = None
 

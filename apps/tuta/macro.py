@@ -331,11 +331,16 @@ def run(link, port, save_callback, show_cursor=False, debug_mode=False, headless
                 
                 # Сохраняем конфигурацию в файл
                 config_filename = f"config_{username}.json"
-                config_path = os.path.join("data/configs", config_filename)
+                configs_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data", "configs_tuta"))
+                os.makedirs(configs_dir, exist_ok=True)
+                config_path = os.path.join(configs_dir, config_filename)
                 with open(config_path, "w", encoding="utf-8") as f:
                     json.dump(full_config, f, indent=4, ensure_ascii=False)
                 
-                save_callback(acc_email, password, recovery_code, config_path)
+                # В accounts.json пишем относительный путь
+                rel_config_path = f"data/configs_tuta/{config_filename}"
+                
+                save_callback(acc_email, password, recovery_code, rel_config_path)
             else:
                 print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Регистрация не завершена (не вошли в почту).")
 

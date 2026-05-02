@@ -27,6 +27,7 @@ def parse_link(url):
         scheme = p.scheme.lower()
         if scheme == "ss":
             scheme = "shadowsocks"
+            scheme_type = "shadowsocks"
         elif scheme in ("http", "https"):
             scheme_type = "http"
         elif scheme in ("socks", "socks4", "socks5"):

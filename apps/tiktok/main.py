@@ -1,250 +1,215 @@
 """
-Automated account registration script for TikTok.
+Continuous multi-threaded account registrar for TikTok.
 
-Navigates the TikTok signup process, interacts with the UI, requests email
-verification, and automatically retrieves the verification code from the
-Tuta email receiver to complete registration.
+This script orchestrates the mass registration of TikTok accounts by managing a
+pool of worker threads, maintaining a continuous supply of proxies, and running
+the registration macro until a specified target number of accounts is reached.
 """
-import os, sys, time, random, json, re, subprocess
+import os, time, sys, json, asyncio, psutil
 # Добавляем корень проекта в sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from playwright.sync_api import sync_playwright
-from core.proxy_handler import ProxyManager
+import random
+import queue
+import threading
+import builtins
+import argparse
+from concurrent.futures import ThreadPoolExecutor
+from filelock import FileLock
+from apps.tiktok import macro
 from core import proxy_handler as proxy_fetcher
-from core import browser_factory as playwright_config
-from core.utils import human_delay, load_accounts, get_proxy_info, check_proxy_connectivity
+from apps.tuta.tuta_utils import start_xvfb
 
-def get_tiktok_code(account, timeout=120, show_cursor=False, headless=True):
-    """Вызывает внешний mail_receiver.py для получения одного кода."""
-    email = account['email']
-    print(f"[*] [Subprocess] Запуск mail_receiver.py для {email}...")
+# --- НАСТРОЙКИ КОНВЕЙЕРА И ПАРСИНГ АРГУМЕНТОВ ---
+ACCOUNTS_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data", "accounts_tiktok.json"))
+LOCK_FILE = os.path.join(os.path.dirname(__file__), "data/accounts_tiktok.lock")
+xvfb_process = None
+
+TARGET_ACCOUNTS = 1
+MAX_WORKERS = 1
+ONLY_SUCCESS_LOGS = False
+SHOW_CURSOR = False
+HEADLESS = False
+USE_XVFB = True
+
+# --- ФИЛЬТРАЦИЯ ЛОГОВ ---
+def custom_print(*args, **kwargs):
+    if not args:
+        if not ONLY_SUCCESS_LOGS:
+            builtins._original_print(*args, **kwargs)
+        return
+    msg = str(args[0])
+    if ONLY_SUCCESS_LOGS:
+        # Выводим только финальные сообщения об успехе
+        if "[!!!]" in msg or "[+++]" in msg:
+            builtins._original_print(*args, **kwargs)
+    else:
+        builtins._original_print(*args, **kwargs)
+
+# Общая очередь для прокси
+PROXY_QUEUE = queue.Queue()
+
+def save_account_safe(email, password, config_path="N/A", note=""):
+    now = time.strftime("%Y-%m-%d %H:%M:%S")
+    data = {
+        "email": email,
+        "password": password,
+        "config_path": config_path,
+        "timestamp": now,
+        "last_check": now,
+        "isvalid": "INVALID" if note else "VALID"
+    }
+    if note:
+        data["note"] = note
+
+    save_dir = os.path.dirname(ACCOUNTS_FILE)
+    os.makedirs(save_dir, exist_ok=True)
     
-    # Путь к mail_receiver.py относительно текущего скрипта
-    receiver_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "tuta", "mail_receiver.py"))
-    accounts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "tuta", "data", "accounts.json"))
-    
-    cmd = [
-        sys.executable, "-u", receiver_path,
-        "--email", email,
-        "--accounts", accounts_path,
-        "--one-code"
-    ]
-    if not show_cursor: cmd.append("--noshow")
-    if headless: cmd.append("--headless")
-    
+    with FileLock(LOCK_FILE):
+        with open(ACCOUNTS_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(data) + "\n")
+
+def get_success_count():
+    if not os.path.exists(ACCOUNTS_FILE): return 0
+    count = 0
     try:
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-        start_t = time.time()
-        while time.time() - start_t < timeout:
-            line = process.stdout.readline()
-            if not line and process.poll() is not None:
-                break
-            if line:
-                print(f"[MailReceiver] {line.strip()}") # Forwarding output for debugging
-                if "CODE_FOUND:" in line:
-                    code = line.split("CODE_FOUND:")[1].strip()
-                    process.terminate()
-                    return code
-            else:
-                time.sleep(0.1)
-        process.terminate()
-    except Exception as e:
-        print(f"[-] Ошибка при вызове mail_receiver.py: {e}")
-    return None
+        with open(ACCOUNTS_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip(): count += 1
+    except: pass
+    return count
 
-def get_tiktok_code_wrapper(account, queue, timeout, show_cursor, headless):
-    code = get_tiktok_code(account, timeout, show_cursor, headless)
-    queue.put(code)
-
-# Конфигурация
-ACCOUNTS_FILE = os.path.join(os.path.dirname(__file__), "..", "tuta", "data", "accounts.json")
-
-def register_tiktok(account, show_cursor=True, headless=False):
-    email = account['email']
-    password = account['password']
+def worker_task(worker_id, initial_count, show_cursor, headless):
+    """
+    Постоянный воркер: берет прокси из очереди и сразу запускает макрос.
+    """
+    attempts = 0
+    print(f"[*] [Worker {worker_id}] Запущен и готов к работе.")
     
-    print(f"[*] Регистрация TikTok на почту: {email}")
-    
-    for attempt_idx in range(5):
-        proxy_link = proxy_fetcher.get_random_proxy()
-        if not proxy_link:
-            print("[*] Нет доступных прокси, пытаюсь обновить список...")
-            proxy_fetcher.update_proxies_python()
-            proxy_link = proxy_fetcher.get_random_proxy()
+    while True:
+        # 1. Проверяем общую цель
+        current_count = get_success_count()
+        if current_count - initial_count >= TARGET_ACCOUNTS:
+            print(f"[*] [Worker {worker_id}] Цель достигнута. Завершаю работу.")
+            break
             
-        if not proxy_link:
-            print("[-] Нет доступных прокси после обновления.")
-            return False
-            
-        print(f"[*] [Попытка {attempt_idx+1}] Прокси: {proxy_link[:60]}...")
-        port = 8000 + random.randint(0, 1000)
-        pm = ProxyManager(proxy_link, port)
-        if not pm.start():
-            print("[-] Прокси не прошел проверку связи. Пробую следующий...")
-            continue
-            
+        # 2. Берем прокси из очереди (ждем, если пусто)
         try:
-            with sync_playwright() as pw:
-                browser_config = playwright_config.get_browser_config(headless=headless, port=port)
-                proxy_info = get_proxy_info(port)
-                context_args, hardware_info = playwright_config.get_context_config(proxy_info)
-                
-                browser = pw.chromium.launch(**browser_config)
-                context = browser.new_context(**context_args)
-                stealth_script = playwright_config.get_stealth_script(hardware_info)
-                context.add_init_script(stealth_script)
-                page, cursor = playwright_config.init_page(context, show_cursor=show_cursor)
-                
-                print("[*] Переход на TikTok...")
-                try:
-                    page.goto("https://www.tiktok.com/signup/phone-or-email/email", wait_until="domcontentloaded", timeout=45000)
-                    human_delay(2, 4)
-                    
-                    page_text = page.evaluate("() => document.body.innerText")
-                    if "Hong Kong" in page_text and "discontinued" in page_text:
-                        print("[-] ОШИБКА: Прокси из Гонконга, TikTok здесь не работает. Скипаю...")
-                        browser.close()
-                        pm.stop()
-                        continue
-                except Exception as e:
-                    print(f"[-] Ошибка загрузки: {e}")
-                    browser.close()
-                    pm.stop()
-                    continue
+            link = PROXY_QUEUE.get(timeout=10)
+        except queue.Empty:
+            continue
 
-                # Куки / Попапы
-                try:
-                    cookie_btn = page.locator("button").filter(has_text=re.compile("Accept all|Allow all|Zezwól|Принять", re.I)).first
-                    if cookie_btn.is_visible():
-                        cursor.click(cookie_btn)
-                        human_delay(1, 2)
-                except: pass
-
-                print("[*] Выбор даты рождения...")
-                try:
-                    selectors = page.locator("[data-e2e='select-container']").all()
-                    if len(selectors) >= 3:
-                        for i, (sel, val) in enumerate(zip(selectors, [random.randint(0,11), random.randint(0,27), random.randint(1990,2000)])):
-                            cursor.click(sel)
-                            human_delay(0.5, 1.2)
-                            item_id = f"{['Month','Day','Year'][i]}-options-item-{val if i < 2 else 2024-val}"
-                            item = page.locator(f"#{item_id}").first
-                            if item.is_visible():
-                                cursor.click(item)
-                                human_delay(0.5, 1.0)
-                except Exception as e:
-                    print(f"[-] Ошибка даты рождения: {e}")
-
-                print(f"[*] Ввод Email: {email}")
-                email_input = page.locator("input[name='email']").first
-                cursor.click(email_input)
-                page.keyboard.type(email, delay=random.randint(50, 100))
-                
-                print("[*] Ввод пароля...")
-                pass_input = page.locator("input[type='password']").first
-                cursor.click(pass_input)
-                page.keyboard.type(password, delay=random.randint(50, 100))
-                
-                # Галочка согласия
-                try:
-                    checkbox = page.locator("input[type='checkbox']").first
-                    if not checkbox.is_checked():
-                        cursor.click(checkbox)
-                        human_delay(1, 2)
-                except: pass
-
-                # --- Нажатие 'Send code' ---
-                code_sent = False
-                for try_send in range(3):
-                    print(f"[*] Нажимаю 'Send code' (попытка {try_send+1})...")
-                    try:
-                        send_btn = page.locator("button[data-e2e='send-code-button']").first
-                        if not send_btn.is_visible():
-                            # Ищем кнопку отправки кода внутри того же контейнера, что и поле ввода кода (независимо от языка)
-                            send_btn = page.locator("xpath=//input[@name='code']/ancestor::*[.//button][1]//button").first
-                        
-                        if send_btn.is_visible():
-                            cursor.smooth_scroll_to(send_btn)
-                            cursor.click(send_btn)
-                            human_delay(5, 8)
-                            
-                            code_input = page.locator("input[name='code'], input[placeholder*='6-digit']").first
-                            btn_text = send_btn.inner_text()
-                            
-                            if code_input.is_visible() or any(char.isdigit() for char in btn_text) or send_btn.is_disabled():
-                                print(f"[+] Код отправлен! (Статус кнопки: {btn_text})")
-                                code_sent = True
-                                break
-                    except: pass
-                    page.keyboard.press("Enter")
-                    human_delay(3, 5)
-
-                if not code_sent:
-                    print("[-] Не удалось отправить код (блок/капча).")
-                    browser.close()
-                    pm.stop()
-                    continue
-
-                # --- Получение кода ---
-                from multiprocessing import Process, Queue
-                print("[*] Запрашиваю код из почты Tuta...")
-                queue = Queue()
-                proc = Process(target=get_tiktok_code_wrapper, args=(account, queue, 150, False, True))
-                proc.start()
-                try:
-                    # Ждем максимум 160 секунд (с небольшим запасом от таймаута внутри функции)
-                    code = queue.get(timeout=160)
-                except Exception:
-                    code = None
-                    
-                if proc.is_alive():
-                    proc.terminate()
-                    proc.join()
-                else:
-                    proc.join()
-                
-                if not code:
-                    print("[-] Код не получен (или истек таймаут).")
-                    browser.close()
-                    pm.stop()
-                    continue
-                
-                print(f"[+] Код получен: {code}. Ввожу...")
-                code_field = page.locator("input[name='code'], input[placeholder*='6-digit']").first
-                cursor.click(code_field)
-                page.keyboard.type(code, delay=random.randint(100, 200))
-                human_delay(2, 4)
-                
-                # Финиш
-                next_btn = page.locator("button[type='submit']").filter(has_text=re.compile("Next|Sign up|Zarejestruj", re.I)).first
-                cursor.click(next_btn)
-                print("[*] Ожидание регистрации...")
-                human_delay(10, 15)
-                
-                if "signup" not in page.url or page.locator("text=Registration successful").is_visible():
-                    print(f"[!!!] УСПЕХ: {email}")
-                    return True
-                else:
-                    print(f"[-] Не удалось завершить. URL: {page.url}")
-                    browser.close()
-                    pm.stop()
-
+        # 3. Рассчитываем порт (свой диапазон для каждого воркера)
+        # Использование портов 20000+ для TikTok во избежание конфликтов с Tuta
+        port = 20000 + (worker_id * 1000) + (attempts % 900)
+        
+        print(f"[*] [Worker {worker_id}] Взял прокси. Попытка #{attempts+1} на порту {port}...")
+        try:
+            # Запускаем макрос
+            success = macro.run(link, port, save_account_safe, show_cursor=show_cursor, debug_mode=False, headless=headless)
+            if success == "NO_ACCOUNTS":
+                print(f"[-] [Worker {worker_id}] Нет доступных аккаунтов. Завершаю работу.")
+                PROXY_QUEUE.task_done()
+                break
+            if not success:
+                # Увеличиваем attempts, чтобы сменить порт для следующего прокси
+                attempts += 1
+                PROXY_QUEUE.task_done()
+                time.sleep(random.uniform(1, 3))
+                continue
         except Exception as e:
-            print(f"[-] Критическая ошибка: {e}")
-        finally:
-            pm.stop()
-    return False
+            print(f"[-] [Worker {worker_id}] Критическая ошибка: {e}")
+        
+        attempts += 1
+        PROXY_QUEUE.task_done()
+        
+        # Небольшая пауза перед следующим прокси, чтобы система "продышалась"
+        time.sleep(random.uniform(1, 3))
+
+async def main():
+    global TARGET_ACCOUNTS, MAX_WORKERS, ONLY_SUCCESS_LOGS, SHOW_CURSOR, HEADLESS, USE_XVFB
+    parser = argparse.ArgumentParser(description="Continuous multi-threaded account registrar for TikTok.")
+    parser.add_argument("target", type=int, nargs="?", default=TARGET_ACCOUNTS, help=f"Target number of accounts to create (default: {TARGET_ACCOUNTS})")
+    parser.add_argument("--workers", type=int, default=MAX_WORKERS, help=f"Number of concurrent browsers (default: {MAX_WORKERS})")
+    parser.add_argument("--nologs", action="store_true", help="Show only success logs")
+    parser.add_argument("--show", action="store_true", help="Show browser and cursor")
+    parser.add_argument("--headless", action="store_true", help="Run browser in headless mode")
+    parser.add_argument("--noxvfb", action="store_true", help="Disable Xvfb (virtual display)")
+    args = parser.parse_args()
+    TARGET_ACCOUNTS = args.target
+    MAX_WORKERS = args.workers
+    ONLY_SUCCESS_LOGS = args.nologs
+    SHOW_CURSOR = args.show
+    HEADLESS = args.headless
+    USE_XVFB = not args.noxvfb
+
+    if USE_XVFB:
+        HEADLESS = False
+
+    if not hasattr(builtins, "_original_print"):
+        builtins._original_print = builtins.print
+        builtins.print = custom_print
+
+    os.makedirs("temp", exist_ok=True)
+    os.makedirs("logs/sessions", exist_ok=True)
+    os.makedirs("data/configs_tiktok", exist_ok=True)
+
+    global xvfb_process
+    xvfb_process = None
+    if USE_XVFB:
+        import subprocess
+        xvfb_process = start_xvfb(100, 120)  # Xvfb port 100 for TikTok
+
+    initial_count = get_success_count()
+    print(f"[#] КОНВЕЙЕР TIKTOK (НЕПРЕРЫВНЫЙ) ЗАПУЩЕН.")
+    print(f"[#] Цель: {TARGET_ACCOUNTS}. Потоков: {MAX_WORKERS}. Headless: {HEADLESS}")
+
+    # Запускаем воркеров в ThreadPoolExecutor
+    executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+    for i in range(MAX_WORKERS):
+        executor.submit(worker_task, i, initial_count, SHOW_CURSOR, HEADLESS)
+
+    try:
+        while True:
+            current_count = get_success_count()
+            if current_count - initial_count >= TARGET_ACCOUNTS:
+                print(f"[*] Цель достигнута. Принудительно завершаем работу всех потоков...")
+                break
+
+            # Если очередь прокси пустеет — подливаем новые
+            if PROXY_QUEUE.qsize() < MAX_WORKERS * 2:
+                print("[*] Очередь прокси пуста, запрашиваю новые...")
+                links = proxy_fetcher.update_proxies_python()
+                if links:
+                    for l in links:
+                        PROXY_QUEUE.put(l)
+                    print(f"[+] Добавлено {len(links)} прокси в очередь.")
+                else:
+                    print("[-] Прокси не получены, ждем 20 сек...")
+            
+            await asyncio.sleep(20)
+    except KeyboardInterrupt:
+        print("[!] Остановка пользователем...")
+    finally:
+        executor.shutdown(wait=False)
+        final_count = get_success_count()
+        print(f"[+++] ВСЕГО СОЗДАНО: {final_count - initial_count}. Остановка дочерних процессов (браузеров)...")
+        try:
+            parent = psutil.Process(os.getpid())
+            children = parent.children(recursive=True)
+            for child in children:
+                try: child.kill()
+                except Exception: pass
+            psutil.wait_procs(children, timeout=3)
+        except Exception:
+            pass
+            
+        if 'xvfb_process' in globals() and xvfb_process:
+            try: xvfb_process.kill()
+            except: pass
+            
+        print("[+++] Скрипт полностью остановлен.")
+        os._exit(0)
 
 if __name__ == "__main__":
-    accounts = load_accounts(ACCOUNTS_FILE)
-    if accounts:
-        target = accounts[0]
-        # Можно передать конкретный email через аргументы, если нужно
-        for arg in sys.argv:
-            if "@" in arg:
-                for a in accounts:
-                    if a['email'] == arg:
-                        target = a
-                        break
-        register_tiktok(target, show_cursor=True, headless=False)
+    asyncio.run(main())
